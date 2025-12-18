@@ -1,0 +1,5 @@
+{
+  "name": "LeadGenie-ONS",
+  "description": "A lightweight, intelligent CRM that transforms Google Sheets into actionable leads. Features a progress dashboard, lead pipeline tracking, and AI-powered outreach drafting using Gemini.",
+  "requestFramePermissions": []
+}
