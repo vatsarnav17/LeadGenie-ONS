@@ -16,8 +16,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onUpdate, onBack }
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<boolean>(false);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
-  // Sync internal state to the specific column names expected in the sheet
   const syncAndNotify = (updatedLead: Lead) => {
     const syncedLead = {
       ...updatedLead,
@@ -28,7 +28,6 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onUpdate, onBack }
     };
     onUpdate(syncedLead);
     
-    // Simulate a "Saved" feedback
     setSaveStatus(true);
     setTimeout(() => setSaveStatus(false), 2000);
   };
@@ -79,6 +78,15 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onUpdate, onBack }
     LeadStatus.LOST,
     LeadStatus.WON
   ].includes(lead._status);
+
+  const handleCopyValue = (key: string, value: any) => {
+    const isPhone = key.toLowerCase().includes('phone') || key.toLowerCase().includes('contact') || key.toLowerCase().includes('mobile');
+    if (isPhone && value) {
+      navigator.clipboard.writeText(String(value));
+      setCopyFeedback(key);
+      setTimeout(() => setCopyFeedback(null), 2000);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full space-y-6 overflow-hidden">
@@ -148,12 +156,25 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onUpdate, onBack }
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {displayFields.map(key => (
-                <div key={key} className="bg-slate-50 p-3 rounded-lg border border-slate-100 overflow-hidden">
-                  <span className="text-xs font-semibold text-slate-400 uppercase block mb-1 truncate">{key}</span>
-                  <div className="text-slate-800 text-sm break-words font-medium">{lead[key] || '-'}</div>
-                </div>
-              ))}
+              {displayFields.map(key => {
+                const isPhone = key.toLowerCase().includes('phone') || key.toLowerCase().includes('contact') || key.toLowerCase().includes('mobile');
+                return (
+                  <div 
+                    key={key} 
+                    className={`bg-slate-50 p-3 rounded-lg border border-slate-100 overflow-hidden relative transition-all duration-200 ${isPhone ? 'cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50' : ''}`}
+                    onClick={() => handleCopyValue(key, lead[key])}
+                    title={isPhone ? "Click to copy phone number" : ""}
+                  >
+                    <span className="text-xs font-semibold text-slate-400 uppercase flex items-center mb-1 truncate">
+                      {key}
+                      {copyFeedback === key && <span className="ml-2 text-green-600 normal-case animate-in fade-in slide-in-from-left-2">Copied!</span>}
+                    </span>
+                    <div className={`text-slate-800 text-sm break-words font-medium ${copyFeedback === key ? 'text-indigo-600' : ''}`}>
+                      {lead[key] || '-'}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Lead, LeadStatus, LeadSubCategory, ImportSource } from '../types';
 import { STATUS_COLORS } from '../constants';
-import { Search, ChevronRight, ChevronLeft, Filter, MapPin, Tag, Phone, Mail, LayoutGrid, Download } from 'lucide-react';
+import { Search, ChevronRight, ChevronLeft, Filter, MapPin, Tag, Phone, Mail, LayoutGrid, Download, Check } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface LeadListProps {
@@ -18,6 +18,7 @@ export const LeadList: React.FC<LeadListProps> = ({ leads, onSelectLead, importS
   const [cityFilter, setCityFilter] = useState<string>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const getVal = (lead: Lead, keys: string[]) => {
     for (const key of keys) {
@@ -76,17 +77,14 @@ export const LeadList: React.FC<LeadListProps> = ({ leads, onSelectLead, importS
   const handleDownloadExcel = () => {
       if (leads.length === 0) return;
 
-      // Prepare data for export
       const exportData = leads.map(lead => {
           const row: any = {};
-          // Include all original columns except internal metadata
           Object.keys(lead).forEach(key => {
               if (!key.startsWith('_') && key !== 'id') {
                   row[key] = lead[key];
               }
           });
 
-          // Explicitly add/ensure the requested columns reflect dashboard changes
           row['STATUS(LEAD)'] = lead._status;
           row['STATUS(CALL)'] = lead._subCategory;
           row['Activity & Notes'] = lead._notes.join(' | ');
@@ -98,8 +96,15 @@ export const LeadList: React.FC<LeadListProps> = ({ leads, onSelectLead, importS
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Updated Leads");
 
-      // Generate download
       XLSX.writeFile(workbook, `LeadGenie_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const handleCopyPhone = (e: React.MouseEvent, phone: string, id: string) => {
+    e.stopPropagation();
+    if (!phone) return;
+    navigator.clipboard.writeText(phone);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   return (
@@ -196,46 +201,62 @@ export const LeadList: React.FC<LeadListProps> = ({ leads, onSelectLead, importS
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {paginatedLeads.map((lead, index) => (
-              <tr 
-                key={lead.id} 
-                className="hover:bg-slate-50 cursor-pointer transition-colors"
-                onClick={() => onSelectLead(lead)}
-              >
-                <td className="px-4 py-4 whitespace-nowrap text-xs text-slate-400 font-mono text-center">
-                  {startIndex + index + 1}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${STATUS_COLORS[lead._status]}`}>
-                    {lead._status}
-                  </span>
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-                  {getVal(lead, ['Name', 'Full Name', 'First Name'])}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600 truncate max-w-[150px]">
-                  {getVal(lead, ['Company', 'Organization'])}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-500">
-                  {getSubCategoryVal(lead)}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600">
-                  <div className="flex items-center truncate max-w-[180px]">
-                      <Mail className="w-3 h-3 mr-1 text-slate-400" />
-                      {getVal(lead, ['Email', 'E-mail'])}
-                  </div>
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600">
-                  <div className="flex items-center">
-                      <Phone className="w-3 h-3 mr-1 text-slate-400" />
-                      {getVal(lead, ['Contact Number', 'Phone', 'Mobile'])}
-                  </div>
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-right">
-                  <ChevronRight className="w-5 h-5 text-slate-300" />
-                </td>
-              </tr>
-            ))}
+            {paginatedLeads.map((lead, index) => {
+              const phone = getVal(lead, ['Contact Number', 'Phone', 'Mobile']);
+              return (
+                <tr 
+                  key={lead.id} 
+                  className="hover:bg-slate-50 cursor-pointer transition-colors"
+                  onClick={() => onSelectLead(lead)}
+                >
+                  <td className="px-4 py-4 whitespace-nowrap text-xs text-slate-400 font-mono text-center">
+                    {startIndex + index + 1}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${STATUS_COLORS[lead._status]}`}>
+                      {lead._status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
+                    {getVal(lead, ['Name', 'Full Name', 'First Name'])}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600 truncate max-w-[150px]">
+                    {getVal(lead, ['Company', 'Organization'])}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-500">
+                    {getSubCategoryVal(lead)}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600">
+                    <div className="flex items-center truncate max-w-[180px]">
+                        <Mail className="w-3 h-3 mr-1 text-slate-400" />
+                        {getVal(lead, ['Email', 'E-mail'])}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600">
+                    <div 
+                      className="flex items-center cursor-pointer hover:text-indigo-600 group/phone transition-colors relative"
+                      title="Click to copy"
+                      onClick={(e) => handleCopyPhone(e, phone, lead.id)}
+                    >
+                        {copiedId === lead.id ? (
+                          <div className="flex items-center text-green-600 font-bold text-[10px] animate-in fade-in zoom-in duration-200">
+                            <Check className="w-3 h-3 mr-1" />
+                            Copied
+                          </div>
+                        ) : (
+                          <>
+                            <Phone className="w-3 h-3 mr-1 text-slate-400 group-hover/phone:text-indigo-600" />
+                            {phone}
+                          </>
+                        )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-right">
+                    <ChevronRight className="w-5 h-5 text-slate-300" />
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
