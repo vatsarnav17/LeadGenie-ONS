@@ -107,7 +107,7 @@ export const Importer: React.FC<ImporterProps> = ({ onImport }) => {
                     <label className="block text-sm font-medium text-slate-700 mb-1">Google Sheet Link</label>
                     <input
                     type="text"
-                    className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-900"
                     placeholder="https://docs.google.com/spreadsheets/d/..."
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
@@ -173,7 +173,7 @@ export const Importer: React.FC<ImporterProps> = ({ onImport }) => {
               <div className="space-y-4 animate-in fade-in duration-300">
                   <label className="block text-sm font-medium text-slate-700 mb-1">CSV Content</label>
                   <textarea
-                    className="w-full h-40 px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-sm"
+                    className="w-full h-40 px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-sm text-slate-900"
                     placeholder="Name,Email,Company&#10;John Doe,john@example.com,Acme Inc"
                     value={csvInput}
                     onChange={(e) => setCsvInput(e.target.value)}

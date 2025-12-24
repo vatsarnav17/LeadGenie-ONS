@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Lead, LeadStatus, LeadSubCategory } from '../types';
 import { STATUS_COLORS } from '../constants';
 import { generateColdEmail, analyzeLead } from '../services/geminiService';
-import { ArrowLeft, Mail, Save, Wand2, BrainCircuit, Loader2, Info, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Mail, Save, Wand2, BrainCircuit, Loader2, Info, CheckCircle2, Phone } from 'lucide-react';
 
 interface LeadDetailProps {
   lead: Lead;
@@ -158,19 +158,32 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onUpdate, onBack }
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {displayFields.map(key => {
                 const isPhone = key.toLowerCase().includes('phone') || key.toLowerCase().includes('contact') || key.toLowerCase().includes('mobile');
+                const value = lead[key];
                 return (
                   <div 
                     key={key} 
                     className={`bg-slate-50 p-3 rounded-lg border border-slate-100 overflow-hidden relative transition-all duration-200 ${isPhone ? 'cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50' : ''}`}
-                    onClick={() => handleCopyValue(key, lead[key])}
+                    onClick={() => handleCopyValue(key, value)}
                     title={isPhone ? "Click to copy phone number" : ""}
                   >
-                    <span className="text-xs font-semibold text-slate-400 uppercase flex items-center mb-1 truncate">
-                      {key}
-                      {copyFeedback === key && <span className="ml-2 text-green-600 normal-case animate-in fade-in slide-in-from-left-2">Copied!</span>}
-                    </span>
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-xs font-semibold text-slate-400 uppercase flex items-center truncate">
+                        {key}
+                        {copyFeedback === key && <span className="ml-2 text-green-600 normal-case animate-in fade-in slide-in-from-left-2">Copied!</span>}
+                      </span>
+                      {isPhone && value && (
+                        <a 
+                          href={`tel:${value}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center px-2 py-0.5 bg-indigo-600 text-white text-[10px] font-bold rounded hover:bg-indigo-700 transition-colors shadow-sm"
+                        >
+                          <Phone className="w-3 h-3 mr-1" />
+                          CALL
+                        </a>
+                      )}
+                    </div>
                     <div className={`text-slate-800 text-sm break-words font-medium ${copyFeedback === key ? 'text-indigo-600' : ''}`}>
-                      {lead[key] || '-'}
+                      {value || '-'}
                     </div>
                   </div>
                 );

@@ -1,16 +1,30 @@
-import React, { useState } from 'react';
-import { ViewMode } from '../types';
-import { LayoutDashboard, Users, Upload, Menu, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ViewMode, User } from '../types';
+import { LayoutDashboard, Users, Upload, Menu, X, LogOut, User as UserIcon, ChevronDown } from 'lucide-react';
 
 interface LayoutProps {
   currentView: ViewMode;
   onNavigate: (view: ViewMode) => void;
+  onLogout: () => void;
+  user: User;
   children: React.ReactNode;
   hasData: boolean;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, hasData }) => {
+export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, onLogout, user, children, hasData }) => {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const navItemClass = (view: ViewMode) => `
     flex items-center p-3 mb-2 rounded-lg cursor-pointer transition-all duration-200
@@ -20,7 +34,10 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
   const handleNav = (view: ViewMode) => {
     onNavigate(view);
     setMobileMenuOpen(false);
+    setUserMenuOpen(false);
   };
+
+  const userInitial = user.name.charAt(0).toUpperCase();
 
   return (
     <div className="min-h-screen flex bg-slate-50 overflow-hidden font-sans">
@@ -58,7 +75,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
 
         <div className="p-4 border-t border-slate-100">
            <div className="text-[10px] text-slate-400 font-medium">
-             v1.0.0 &bull; Local Storage Mode
+             v1.0.0 &bull; Cloud Sync Active
            </div>
         </div>
       </aside>
@@ -119,15 +136,52 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, childre
               {currentView === 'DASHBOARD' && 'Pipeline Overview'}
               {currentView === 'LIST' && 'Lead Management'}
               {currentView === 'DETAIL' && 'Lead Details'}
+              {currentView === 'PROFILE' && 'User Profile'}
             </h1>
           </div>
-          <div className="flex items-center space-x-3">
-            <div className="hidden sm:block text-right">
-              <p className="text-xs font-bold text-slate-800">Arnav User</p>
-              <p className="text-[10px] text-slate-400">Sales Lead</p>
-            </div>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 border-2 border-white shadow-sm flex items-center justify-center text-white font-bold text-xs">
-              AU
+          
+          <div className="flex items-center space-x-4">
+            <div className="relative" ref={userMenuRef}>
+              <button 
+                onClick={() => setUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center space-x-3 p-1 rounded-full hover:bg-slate-50 transition-colors"
+              >
+                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 border-2 border-white shadow-sm flex items-center justify-center text-white font-bold text-xs uppercase">
+                  {userInitial}
+                </div>
+                <div className="hidden sm:block text-left">
+                  <p className="text-xs font-bold text-slate-800 leading-none mb-0.5">{user.name}</p>
+                  <p className="text-[10px] text-slate-400 leading-none">{user.role}</p>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 animate-in fade-in zoom-in duration-200 origin-top-right">
+                  <div className="px-4 py-3 border-b border-slate-50 mb-1">
+                    <p className="text-xs font-medium text-slate-400 uppercase mb-1">Signed in as</p>
+                    <p className="text-sm font-bold text-slate-800 truncate">{user.email}</p>
+                  </div>
+                  
+                  <button 
+                    onClick={() => handleNav('PROFILE')}
+                    className="w-full flex items-center px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                  >
+                    <UserIcon className="w-4 h-4 mr-3" />
+                    My Profile
+                  </button>
+                  
+                  <div className="h-px bg-slate-100 my-1"></div>
+                  
+                  <button 
+                    onClick={onLogout}
+                    className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4 mr-3" />
+                    Sign Out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>

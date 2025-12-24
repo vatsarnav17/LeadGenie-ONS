@@ -50,4 +50,11 @@ export interface SheetData {
   importSource: ImportSource;
 }
 
-export type ViewMode = 'DASHBOARD' | 'LIST' | 'DETAIL' | 'IMPORT';
+export interface User {
+  name: string;
+  email: string;
+  role: string;
+  avatar?: string;
+}
+
+export type ViewMode = 'DASHBOARD' | 'LIST' | 'DETAIL' | 'IMPORT' | 'PROFILE';
