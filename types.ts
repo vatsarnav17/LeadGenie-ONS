@@ -1,3 +1,4 @@
+
 export enum LeadStatus {
   NEW = 'NEW',
   CONTACTED = 'CONTACTED',
@@ -42,15 +43,27 @@ export interface SheetStats {
 
 export type ImportSource = 'URL' | 'CSV' | 'FILE';
 
-export interface SheetData {
+export interface LibraryItem {
   id: string;
+  name: string;
+  url?: string;
+  syncUrl?: string; // Google Apps Script URL for writing back
+  importSource: ImportSource;
+  createdAt: string;
+}
+
+export interface SheetData {
+  id: string; 
   name: string;
   columns: string[];
   leads: Lead[];
   importSource: ImportSource;
+  url?: string;
+  syncUrl?: string; // Optional write-back endpoint
 }
 
 export interface User {
+  id: string;
   name: string;
   email: string;
   role: string;

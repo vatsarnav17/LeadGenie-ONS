@@ -1,3 +1,4 @@
+
 import { Lead, LeadStatus, LeadSubCategory } from '../types';
 import * as XLSX from 'xlsx';
 
@@ -95,7 +96,6 @@ const processParsedRows = (rows: string[][]): Lead[] => {
         }
       });
 
-      // Map existing sheet columns to internal states if present
       if (lead['STATUS(LEAD)']) {
           const s = String(lead['STATUS(LEAD)']).toUpperCase() as LeadStatus;
           if (Object.values(LeadStatus).includes(s)) lead._status = s;
@@ -121,14 +121,47 @@ export const extractGoogleSheetId = (url: string): string | null => {
 };
 
 export const fetchPublicSheet = async (sheetId: string): Promise<Lead[]> => {
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
   try {
     const response = await fetch(url);
-    if (!response.ok) throw new Error('Network response was not ok');
     const text = await response.text();
+    if (text.includes('<!DOCTYPE html>') || text.includes('google-signin')) {
+      const fallbackUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+      const fbResponse = await fetch(fallbackUrl);
+      if (!fbResponse.ok) throw new Error("Sheet is private. Set sharing to 'Anyone with the link can view'.");
+      return parseCSV(await fbResponse.text());
+    }
     return parseCSV(text);
-  } catch (error) {
-    console.error("Failed to fetch sheet", error);
+  } catch (error: any) {
     throw error;
+  }
+};
+
+/**
+ * Sends a Lead update to the Google Apps Script Web App
+ */
+export const pushToGoogleSheet = async (syncUrl: string, lead: Lead): Promise<boolean> => {
+  try {
+    // We clean the lead data to match what the Apps Script expects
+    const payload = {
+      ...lead,
+      'STATUS(LEAD)': lead._status,
+      'STATUS(CALL)': lead._subCategory,
+      'Activity & Notes': lead._notes.join(' | '),
+      timestamp: new Date().toISOString()
+    };
+
+    const response = await fetch(syncUrl, {
+      method: 'POST',
+      mode: 'no-cors', // Apps Script often requires no-cors for simple deployments
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    // With no-cors, we can't see the response body, but we assume success if no error is thrown
+    return true;
+  } catch (err) {
+    console.error("[LeadGenie] Sync Error:", err);
+    return false;
   }
 };
